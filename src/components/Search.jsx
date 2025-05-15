@@ -1,12 +1,17 @@
-import React from 'react'
+// components/Search.js
+import React from 'react';
 
-function Search() {
-    return (
-        <div className="bw-search">
-            <i className="fi fi-rr-search"></i>
-            <input className="form-control bw-form-control" placeholder="Search" />
-        </div>
-    )
+function Search({ onSearch }) {
+  return (
+    <div className="bw-search">
+      <i className="fi fi-rr-search"></i>
+      <input
+        className="form-control bw-form-control"
+        placeholder="Search"
+        onChange={(e) => onSearch(e.target.value)}
+      />
+    </div>
+  );
 }
 
-export default Search
+export default Search;

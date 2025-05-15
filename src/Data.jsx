@@ -1,127 +1,151 @@
 const data = {
-     "menu": [
-          {
-            "id": 1,
-            "label": "Dashboard",
-            "icon": "fi fi-sr-table-columns",
-            "endpoint": "/account/dashboard"
-          },
-          {
-            "id": 2,
-            "label": "Offerings",
-            "icon": "fi fi-sr-inbox-full",
-            "children": [
-              {
-                "id": 3,
-                "label": "Colleges",
-                "endpoint": "/account/colleges"
-              },
-              {
-                "id": 4,
-                "label": "Attendance",
-                "endpoint": "/account/attendance"
-              }
-            ]
-          },
-          {
-            "id": 5,
-            "label": "Practice Test",
-            "icon": "fi fi-sr-document",
-            "endpoint": "/"
-          },
-          {
-            "id": 6,
-            "label": "Test Series",
-            "icon": "fi fi-sr-duplicate",
-            "endpoint": "/"
-          },
-          {
-            "id": 7,
-            "label": "Courses",
-            "icon": "fi fi-sr-graduation-cap",
-            "endpoint": "/"
-          },
-          {
-            "id": 8,
-            "label": "Employee Access",
-            "icon": "fi fi-sr-unlock",
-            "endpoint": "/"
-          },
-          {
-            "id": 9,
-            "label": "Marketing",
-            "icon": "fi fi-sr-megaphone",
-            "children": [
-              {
-                "id": 10,
-                "label": "Send Mails",
-                "endpoint": "/"
-              },
-              {
-                "id": 11,
-                "label": "Notifications",
-                "endpoint": "/"
-              },
-              {
-                "id": 12,
-                "label": "Coupons",
-                "endpoint": "/"
-              }
-            ]
-          },
-          {
-            "id": 13,
-            "label": "Website",
-            "icon": "fi fi-sr-browser",
-            "children": [
-              {
-                "id": 14,
-                "label": "Pages",
-                "endpoint": "/"
-              },
-              {
-                "id": 15,
-                "label": "Blogs",
-                "endpoint": "/"
-              }
-            ]
-          },
-          {
-            "id": 16,
-            "label": "Reports",
-            "icon": "fi fi-sr-chart-pie-alt",
-            "children": [
-              {
-                "id": 17,
-                "label": "Users",
-                "endpoint": "/"
-              },
-              {
-                "id": 18,
-                "label": "Sales",
-                "endpoint": "/"
-              },
-              {
-                "id": 19,
-                "label": "Orders",
-                "endpoint": "/"
-              }
-            ]
-          },
-          {
-            "id": 20,
-            "label": "Support",
-            "icon": "fi fi-sr-headset",
-            "endpoint": "/"
-          },
-          {
-            "id": 21,
-            "label": "Settings",
-            "icon": "fi fi-sr-settings",
-            "endpoint": "/"
-          }
-        ],
- 
+     menu: [
+    {
+      id: 1,
+      label: "Dashboard",
+      icon: "fi fi-sr-table-columns",
+      endpoint: "/account/dashboard",
+      roles: ["superadmin", "admin", "collegeadmin","tech"]
+    },
+    {
+      id: 2,
+      label: "Offerings",
+      icon: "fi fi-sr-inbox-full",
+      roles: ["superadmin", "admin","tech"],
+      // roles:["admin"],
+      children: [
+        {
+          id: 3,
+          label: "Colleges",
+          endpoint: "/account/colleges",
+          roles: ["superadmin", "admin"]
+            //  roles:["admin"],
+        },
+        {
+          id: 4,
+          label: "Attendance",
+          endpoint: "/account/attendance",
+          roles: ["superadmin"]
+            //  roles:["admin"],
+        }
+      ]
+    },
+    {
+      id: 5,
+      label: "Practice Test",
+      icon: "fi fi-sr-document",
+      endpoint: "/",
+      roles: ["admin"]
+    },
+    {
+      id: 6,
+      label: "Test Series",
+      icon: "fi fi-sr-duplicate",
+      endpoint: "/",
+      roles: ["admin"]
+    },
+    {
+      id: 7,
+      label: "Courses",
+      icon: "fi fi-sr-graduation-cap",
+      endpoint: "/",
+      roles: ["superadmin"]
+    },
+    {
+      id: 8,
+      label: "Employee Access",
+      icon: "fi fi-sr-unlock",
+      endpoint: "/account/EmployeeAcess",
+      roles: ["superadmin","tech","admin"]
+    },
+    {
+      id: 9,
+      label: "Marketing",
+      icon: "fi fi-sr-megaphone",
+      roles: ["admin"],
+      children: [
+        {
+          id: 10,
+          label: "Send Mails",
+          endpoint: "/",
+          roles: ["admin"]
+        },
+        {
+          id: 11,
+          label: "Notifications",
+          endpoint: "/",
+          roles: ["admin"]
+        },
+        {
+          id: 12,
+          label: "Coupons",
+          endpoint: "/",
+          roles: ["admin"]
+        }
+      ]
+    },
+    {
+      id: 13,
+      label: "Website",
+      icon: "fi fi-sr-browser",
+      roles: ["superadmin", "admin"],
+      children: [
+        {
+          id: 14,
+          label: "Pages",
+          endpoint: "/",
+          roles: ["admin"]
+        },
+        {
+          id: 15,
+          label: "Blogs",
+          endpoint: "/",
+          roles: ["superadmin"]
+        }
+      ]
+    },
+    {
+      id: 16,
+      label: "Reports",
+      icon: "fi fi-sr-chart-pie-alt",
+      roles: ["admin", "superadmin"],
+      children: [
+        {
+          id: 17,
+          label: "Users",
+          endpoint: "/",
+          roles: ["admin"]
+        },
+        {
+          id: 18,
+          label: "Sales",
+          endpoint: "/",
+          roles: ["superadmin"]
+        },
+        {
+          id: 19,
+          label: "Orders",
+          endpoint: "/",
+          roles: ["admin"]
+        }
+      ]
+    },
+    {
+      id: 20,
+      label: "Support",
+      icon: "fi fi-sr-headset",
+      endpoint: "/",
+      roles: ["admin", "collegeadmin"]
+    },
+    {
+      id: 21,
+      label: "Settings",
+      icon: "fi fi-sr-settings",
+      endpoint: "/",
+      roles: ["superadmin"]
+    }
+  ]
+,
       
     "students": [
         { "name": "Pavan", "college": "Testing College 2025", "email": "pavanjaiswal5@gmail.com", "phone": "8184801608", "branch": "B.Sc Computers" },

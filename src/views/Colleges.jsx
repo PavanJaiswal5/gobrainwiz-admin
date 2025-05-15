@@ -1,5 +1,9 @@
-import React, { useContext, useState, useEffect } from "react";
-import { userApi } from "../services/api/college.api";
+import React, { useContext, useState, useEffect, use } from "react";
+import { collegeApi} from "../services/api/college.api";
+import {userAuthApi} from "../services/api/userAuth.api"
+import { getUserDataFromToken} from "../../utils/helpers/auth"
+import {Navigate} from 'react-router'
+
 
 import {
   Button,
@@ -16,6 +20,8 @@ import data from "../Data";
 import Navigation from "../components/Navigation";
 import { Config } from "../components/ConfigProvider";
 import Search from "../components/Search";
+import { useAuth } from "../context/AuthContext";
+
 
 function Colleges() {
   const { BwSwal } = useContext(Config);
@@ -31,161 +37,90 @@ function Colleges() {
     password: "",
   });
   const [colleges, setColleges] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [userData, setUserData] = useState(null);
+   const { user } = useAuth();
   useEffect(() => {
     fetchColleges();
+  
+      
   }, []);
 
-  // const handleSubmit = async (e) => {
-  //   e.preventDefault();
+  const handleSearch = (value) => {
+    setSearchTerm(value.toLowerCase());
+  };
 
-  //   // Frontend Validation
-  //   const { name, email, courses, phoneNumber, head, username, password } =
-  //     formData;
-
-  //   const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
-  //   if (!name || name.length < 3) {
-  //     toast.error("Name must be at least 3 characters long.");
-  //     return;
-  //   }
-
-  //   if (!email || !emailRegex.test(email)) {
-  //     toast.error("Please enter a valid email.");
-  //     return;
-  //   }
-
-  //   if (courses.length === 0) {
-  //     toast.error("Please select at least one course.");
-  //     return;
-  //   }
-
-  //   if (!phoneNumber || phoneNumber.length !== 10 || isNaN(phoneNumber)) {
-  //     toast.error("Please enter a valid 10-digit phone number.");
-  //     return;
-  //   }
-
-  //   if (!head || head.length < 3) {
-  //     toast.error("Head must be at least 3 characters long.");
-  //     return;
-  //   }
-  //   if (!username || username.length < 3) {
-  //     toast.error("Username must be at least 3 characters long.");
-  //     return;
-  //   }
-  //   if (!password || password.length < 6) {
-  //     toast.error("Password must be at least 6 characters long.");
-  //     return;
-  //   }
-
-  //   try {
-  //     console.log("Form Data:", formData);
-  //     const modifiedFormData = {
-  //       ...formData,
-  //       courses: formData.courses.map((course) => course.name),
-  //     };
-
-  //     const res = await userApi.addCollege(modifiedFormData);
-  //     console.log("API Response:", res);
-  //     if (res?.status === 200 || res?.success || res?.status === 201) {
-  //       toast.success("College Added Successfully!");
-  //       setAddmodal(false);
-  //       setFormData({
-  //         name: "",
-  //         email: "",
-  //         courses: [],
-  //         phoneNumber: "",
-  //         head: "",
-  //         username: "",
-  //         password: "",
-  //       });
-  //     } else {
-  //       toast.error(res?.message || "Something went wrong");
-  //     }
-  //   } catch (err) {
-  //     console.error(err);
-  //     toast.error(err.message || "Failed to add college");
-  //   }
-  // };
- 
-  // const handleSubmit = async () => {
-  //   try {
-  //     const payload = {
-  //       name: formData.name,
-  //       email: formData.email,
-  //       courses: formData.courses,
-  //       phoneNumber: formData.phoneNumber,
-  //       head: formData.head,
-  //       username: formData.username,
-  //       password: formData.password,
-  //     };
+  const filteredColleges = colleges.filter((college) =>
+    college.collegeName.toLowerCase().includes(searchTerm)
+  );
+    // Pagination calculations
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredColleges.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredColleges.length / itemsPerPage);
   
-  //     if (formData._id) {
-  //       // If _id exists, update the college
-  //       const res = await userApi.updateCollege(formData._id, payload);
-  //       if (res?.success) {
-  //         toast.success("College updated successfully!");
-  //       } else {
-  //         toast.error(res?.message || "Failed to update");
-  //       }
-  //     } else {
-  //       // Else, add new college
-        
-  //       const res = await userApi.addCollege(payload);
-  //       if (res?.success) {
-  //         toast.success("College added successfully!");
-  //       } else {
-  //         toast.error(res?.message || "Failed to add");
-  //       }
-  //     }
-  
-  //     setAddmodal(false);
-  //     fetchColleges(); // Refresh list
-  //     setFormData({}); // Clear form after submit
-  //   } catch (error) {
-  //     console.error(error);
-  //     toast.error("Something went wrong");
-  //   }
-  // };
-  
- 
   const handleSubmit = async (e) => {
     e.preventDefault();
-  
-    // Destructure form data
-    const { name, email, courses, phoneNumber, head, username, password, _id } = formData;
-  
+
+    // Ensure all course items are in object format like { name: "BCA" }
+    const normalizedCourses = (formData.courses || []).map((course) => {
+      return typeof course === "string"
+        ? data.courses2.find((c) => c.name === course) || { name: course }
+        : course;
+    });
+
+    // Replace courses in formData with normalizedCourses
+    const updatedFormData = { ...formData, courses: normalizedCourses };
+
+    // Destructure updated data
+    const { name, email, courses, phoneNumber, head, username, password, _id } =
+      updatedFormData;
+
     // Basic Validation
     const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
-    if (!name || name.length < 3) return toast.error("Name must be at least 3 characters.");
-    if (!email || !emailRegex.test(email)) return toast.error("Please enter a valid email.");
-    if (!Array.isArray(courses) || courses.length === 0) return toast.error("Select at least one course.");
-    if (!phoneNumber || phoneNumber.length !== 10 || isNaN(phoneNumber)) return toast.error("Enter a valid 10-digit phone number.");
-    if (!head || head.length < 3) return toast.error("Head must be at least 3 characters.");
-    if (!username || username.length < 3) return toast.error("Username must be at least 3 characters.");
-    if (!_id && (!password || password.length < 6)) return toast.error("Password must be at least 6 characters."); // Allow skipping password on edit if not changing it
-  
+    if (!name || name.length < 3)
+      return toast.error("Name must be at least 3 characters.");
+    if (!email || !emailRegex.test(email))
+      return toast.error("Please enter a valid email.");
+    if (!Array.isArray(courses) || courses.length === 0)
+      return toast.error("Select at least one course.");
+    if (!phoneNumber || phoneNumber.length !== 10 || isNaN(phoneNumber))
+      return toast.error("Enter a valid 10-digit phone number.");
+    if (!head || head.length < 3)
+      return toast.error("Head must be at least 3 characters.");
+    if (!username || username.length < 3)
+      return toast.error("Username must be at least 3 characters.");
+    if (!_id && (!password || password.length < 6))
+      return toast.error("Password must be at least 6 characters.");
+
     try {
       const payload = {
         name,
         email,
-        courses: courses.map((course) => course.name || course), // handles both objects & plain strings
+        courses: courses.map((course) => course.name || course),
         phoneNumber,
         head,
         username,
       };
-  
-      if (!_id) payload.password = password; // Only send password for new entries
-  
+      console.log("Payload courses :", payload.courses);
+
+      if (!_id) payload.password = password;
+
       let res;
       if (_id) {
         // Update existing college
-        res = await userApi.updateCollege(_id, payload);
+        res = await collegeApi.updateCollege(_id, payload);
       } else {
         // Add new college
-        res = await userApi.addCollege(payload);
+        res = await collegeApi.addCollege(payload);
       }
-  
+
       if (res?.status === 200 || res?.status === 201 || res?.success) {
-        toast.success(_id ? "College updated successfully!" : "College added successfully!");
+        toast.success(
+          _id ? "College updated successfully!" : "College added successfully!"
+        );
         setAddmodal(false);
         fetchColleges();
         setFormData({
@@ -205,11 +140,10 @@ function Colleges() {
       toast.error(err.message || "Server Error");
     }
   };
-  
 
   const fetchColleges = async () => {
     try {
-      const res = await userApi.getCollegs();
+      const res = await collegeApi.getCollegs();
       console.log("API Response:", res);
       if (res?.status === 200 || res?.success || res?.status === 201) {
         data.colleges = res.data;
@@ -225,7 +159,7 @@ function Colleges() {
   };
   const handleDeleteCollege = async (collegeId) => {
     try {
-      const res = await userApi.deleteCollege(collegeId);
+      const res = await collegeApi.deleteCollege(collegeId);
       console.log("API Response:", res);
       if (res?.status === 200 || res?.success || res?.status === 201) {
         toast.success("College Deleted Successfully!");
@@ -239,6 +173,39 @@ function Colleges() {
     }
   };
 
+  const handleClearModel = () => {
+    setFormData({
+      name: "",
+      email: "",
+      courses: [],
+      phoneNumber: "",
+      head: "",
+      username: "",
+      password: "",
+    });
+    setAddmodal(false);
+  };
+  const handleAttendanceToggle = async (e, collegeId) => {
+    const isChecked = e.target.checked;
+    console.log("Attendance Toggle:", isChecked, collegeId);
+
+    try {
+      const res = await collegeApi.addAttendance(collegeId, isChecked);
+      if (res?.status === 200 || res?.success || res?.status === 201) {
+        toast.success(
+          isChecked ? "Attendance Enabled!" : "Attendance Disabled!"
+        );
+        fetchColleges();
+      } else {
+        toast.error(res?.message || "Something went wrong");
+      }
+    } catch (error) {
+      toast.error("Error updating attendance status");
+      console.error("Attendance Toggle Error:", error);
+    }
+  };
+
+// console.log(userData);
   return (
     <>
       <div>
@@ -251,11 +218,12 @@ function Colleges() {
         />
         <div className="flex-col flex md:flex-row md:items-center mb-[20px] gap-[10px]">
           <div className="text-[20px] font-bold flex-auto">Colleges</div>
-          <Search />
-          <div className="flex items-center gap-[10px]">
-            <Button variant="outline-primary" className="bw-btn">
+          <Search onSearch={handleSearch} />
+          {/* <div className="flex items-center gap-[10px]">
+            <Button variant="outline-primary" className="bw-btn" >
               Upload Students <i className="fi fi-rr-upload"></i>
             </Button>
+            
             <Button
               variant="primary"
               className="btn-icon"
@@ -263,165 +231,229 @@ function Colleges() {
             >
               <i className="fi fi-sr-plus"></i>
             </Button>
-          </div>
+          </div> */}
+          {user?.role === "superadmin" && (
+  <div className="flex items-center gap-[10px]">
+    <Button variant="outline-primary" className="bw-btn">
+      Upload Students <i className="fi fi-rr-upload"></i>
+    </Button>
+    <Button
+      variant="primary"
+      className="btn-icon"
+      onClick={() => setAddmodal(true)}
+    >
+      <i className="fi fi-sr-plus"></i>
+    </Button>
+  </div>
+)}
         </div>
-        <div className="table-responsive bw-card">
-          <Table className="table table-hover bw-table m-0">
-            <thead>
-              <tr>
-                <th>S.No</th>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Phone</th>
-                <th>Head</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {colleges.map((college, i) => (
-                <tr key={college._id}>
-                  <td>{i + 1}</td>
-                  <td>{college.collegeName}</td>
-                  <td>{college.collegeEmail}</td>
-                  <td>{college.collegePhoneNumber}</td>
-                  <td>{college.collegeHead}</td>
-                  <td>
-                    {college.status ? (
-                      <span className="badge rounded-pill text-bg-primary">
-                        Active
-                      </span>
-                    ) : (
-                      <span className="badge rounded-pill text-bg-danger">
-                        Inactive
-                      </span>
-                    )}
-                  </td>
-                  <td>
-                    <Dropdown autoClose="outside">
-                      <Dropdown.Toggle
-                        variant="outline-default"
-                        size="sm"
-                        className="bw-btn"
-                        bsPrefix=" "
+       <div className="table-responsive bw-card">
+  <Table className="table table-hover bw-table m-0">
+    <thead>
+      <tr>
+        <th>S.No</th>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Phone</th>
+        <th>Head</th>
+        {user?.role === "superadmin" && (
+          <>
+            <th>Status</th>
+            <th>Actions</th>
+          </>
+        )}
+      </tr>
+    </thead>
+    <tbody>
+      {Array.isArray(currentItems) && currentItems.length > 0 ? (
+        currentItems.map((college, i) => (
+          <tr key={college._id}>
+            <td>{indexOfFirstItem + i + 1}</td>
+            <td>{college.collegeName}</td>
+            <td>{college.collegeEmail}</td>
+            <td>{college.collegePhoneNumber}</td>
+            <td>{college.collegeHead}</td>
+
+            {user?.role === "superadmin" && (
+              <>
+                <td>
+                  {college.status === "active" ? (
+                    <span className="badge rounded-pill text-bg-primary">
+                      Active
+                    </span>
+                  ) : (
+                    <span className="badge rounded-pill text-bg-danger">
+                      Inactive
+                    </span>
+                  )}
+                </td>
+                <td>
+                  <Dropdown autoClose="outside">
+                    <Dropdown.Toggle
+                      variant="outline-default"
+                      size="sm"
+                      className="bw-btn"
+                      bsPrefix=" "
+                    >
+                      Actions <i className="fi fi-sr-angle-small-down"></i>
+                    </Dropdown.Toggle>
+                    <Dropdown.Menu className="bw-dropdown">
+                      <Dropdown.Item as="button" onClick={() => setViewmodal(true)}>
+                        <i className="fi fi-sr-eye"></i> View
+                      </Dropdown.Item>
+                      <Dropdown.Item
+                        as="button"
+                        onClick={() => {
+                          setFormData({
+                            name: college.collegeName,
+                            email: college.collegeEmail,
+                            courses: college.courses,
+                            phoneNumber: college.collegePhoneNumber,
+                            head: college.collegeHead,
+                            username: college.loginUserName,
+                            password: college.loginPassword,
+                            _id: college._id,
+                          });
+                          setAddmodal(true);
+                        }}
                       >
-                        Actions <i className="fi fi-sr-angle-small-down"></i>
-                      </Dropdown.Toggle>
-                      <Dropdown.Menu className="bw-dropdown">
-                        <Dropdown.Item
-                          as="button"
-                          onClick={() => setViewmodal(true)}
-                        >
-                          <i className="fi fi-sr-eye"></i> View
-                        </Dropdown.Item>
-                        <Dropdown.Item
-                          as="button"
-                          onClick={() => {
-                            setFormData({
-                              name: college.collegeName,
-                              email: college.collegeEmail,
-                              courses: college.courses,
-                              phoneNumber: college.collegePhoneNumber,
-                              head: college.collegeHead,
-                              username: college.loginUserName,
-                              password: college. loginPassword,
-                              _id: college._id, // Important for updating
-                            });
-                            setAddmodal(true);
-                          }}
-                        >
-                          <i className="fi fi-sr-edit"></i>Edit
-                        </Dropdown.Item>
+                        <i className="fi fi-sr-edit"></i>Edit
+                      </Dropdown.Item>
+                      <Dropdown.Item
+                        as="button"
+                        onClick={() => toast.success("URL Copied!")}
+                      >
+                        <i className="fi fi-sr-copy"></i>Copy URL
+                      </Dropdown.Item>
+                      <Dropdown.Item
+                        as="button"
+                        onClick={() => {
+                          BwSwal.fire({
+                            text: `Are you sure you want to delete "${college.collegeName}"?`,
+                            showCancelButton: true,
+                            confirmButtonText: "Yes",
+                            confirmButtonColor: "var(--bw-primary)",
+                            cancelButtonText: "No",
+                            icon: "warning",
+                          }).then((result) => {
+                            if (result.isConfirmed) {
+                              handleDeleteCollege(college._id);
+                            }
+                          });
+                        }}
+                      >
+                        <i className="fi fi-sr-trash"></i>Delete
+                      </Dropdown.Item>
+                      <Dropdown.Divider />
+                      <Dropdown.Item as="div" bsPrefix="px-[10px]">
+                        <Form.Check
+                          type="switch"
+                          label="Attendance"
+                          id={`attendance-${i}`}
+                          checked={college.status === "active"}
+                          onChange={(e) => handleAttendanceToggle(e, college._id)}
+                        />
+                      </Dropdown.Item>
+                    </Dropdown.Menu>
+                  </Dropdown>
+                </td>
+              </>
+            )}
+          </tr>
+        ))
+      ) : (
+        <tr>
+          <td colSpan={user?.role === "superadmin" ? 7 : 5} className="text-center text-muted py-3">
+            No colleges found.
+          </td>
+        </tr>
+      )}
+    </tbody>
+  </Table>
+</div>
 
-                        <Dropdown.Item
-                          as="button"
-                          onClick={() => toast.success("URL Copied!")}
-                        >
-                          <i className="fi fi-sr-copy"></i>Copy URL
-                        </Dropdown.Item>
-                        <Dropdown.Item
-                          as="button"
-                          onClick={() => {
-                            BwSwal.fire({
-                              text: `Are you sure you want to delete "${college.collegeName}"?`,
-                              showCancelButton: true,
-                              confirmButtonText: "Yes",
-                              confirmButtonColor: "var(--bw-primary)",
-                              cancelButtonText: "No",
-                              icon: "warning",
-                            }).then((result) => {
-                              if (result.isConfirmed) {
-                                handleDeleteCollege(college._id);
-                              }
-                            });
-                          }}
-                        >
-                          <i className="fi fi-sr-trash"></i>Delete
-                        </Dropdown.Item>
+       <div className="flex-col flex md:flex-row items-center gap-[10px] mt-[10px]">
+  <div className="flex items-center gap-[10px] mr-auto">
+    <select
+      className="form-select form-select-sm"
+      value={itemsPerPage}
+      onChange={(e) => {
+        setItemsPerPage(Number(e.target.value));
+        setCurrentPage(1); // reset to first page
+      }}
+    >
+      <option value={10}>10</option>
+      <option value={25}>25</option>
+      <option value={50}>50</option>
+      <option value={100}>100</option>
+    </select>
 
-                        <Dropdown.Divider />
-                        <Dropdown.Item as="div" bsPrefix="px-[10px]">
-                          <Form.Check
-                            type="switch"
-                            label="Attendance"
-                            id={`attendance-${i}`}
-                          />
-                        </Dropdown.Item>
-                      </Dropdown.Menu>
-                    </Dropdown>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
-        </div>
-        <div className="flex-col flex md:flex-row items-center gap-[10px] mt-[10px]">
-          <div className="flex items-center gap-[10px] mr-auto">
-            <select className="form-select form-select-sm">
-              <option>10</option>
-              <option>25</option>
-              <option>50</option>
-              <option>100</option>
-            </select>
-            <span className="whitespace-nowrap">
-              Showing 1 to 1 of 1 entries
-            </span>
-          </div>
-          <nav>
-            <ul className="pagination bw-card m-0">
-              <li className="page-item">
-                <a className="page-link" href="#">
-                  <i className="fi fi-br-angle-left"></i>
-                </a>
-              </li>
-              <li className="page-item active">
-                <a className="page-link" href="#">
-                  1
-                </a>
-              </li>
-              <li className="page-item">
-                <a className="page-link" href="#">
-                  2
-                </a>
-              </li>
-              <li className="page-item">
-                <a className="page-link" href="#">
-                  3
-                </a>
-              </li>
-              <li className="page-item">
-                <a className="page-link" href="#">
-                  <i className="fi fi-br-angle-right"></i>
-                </a>
-              </li>
-            </ul>
-          </nav>
-        </div>
+    <span className="whitespace-nowrap">
+      Showing {filteredColleges.length === 0 ? 0 : indexOfFirstItem + 1} to{" "}
+      {Math.min(indexOfLastItem, filteredColleges.length)} of{" "}
+      {filteredColleges.length} entries
+    </span>
+  </div>
+
+  <nav>
+    <ul className="pagination bw-card m-0">
+      <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
+        <button
+          className="page-link"
+          onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+        >
+          <i className="fi fi-br-angle-left"></i>
+        </button>
+      </li>
+
+      {[...Array(Math.ceil(filteredColleges.length / itemsPerPage))].map(
+        (_, i) => (
+          <li
+            className={`page-item ${
+              currentPage === i + 1 ? "active" : ""
+            }`}
+            key={i}
+          >
+            <button
+              className="page-link"
+              onClick={() => setCurrentPage(i + 1)}
+            >
+              {i + 1}
+            </button>
+          </li>
+        )
+      )}
+
+      <li
+        className={`page-item ${
+          currentPage === Math.ceil(filteredColleges.length / itemsPerPage)
+            ? "disabled"
+            : ""
+        }`}
+      >
+        <button
+          className="page-link"
+          onClick={() =>
+            setCurrentPage((prev) =>
+              Math.min(
+                prev + 1,
+                Math.ceil(filteredColleges.length / itemsPerPage)
+              )
+            )
+          }
+        >
+          <i className="fi fi-br-angle-right"></i>
+        </button>
+      </li>
+    </ul>
+  </nav>
+</div>
+
       </div>
       <Modal
         className="bw-modal"
         show={addModal}
-        onHide={() => setAddmodal(false)}
+        onHide={() => handleClearModel()}
       >
         <Modal.Header closeButton>
           <Modal.Title>
@@ -513,24 +545,30 @@ function Colleges() {
                   />
                 </div>
               </div>
-              <div className="col-md-12">
-                <div>
-                  <label className="form-label">Password</label>
-                  <input
-                    type="text"
-                    className="form-control bw-form-control"
-                    value={formData.password}
-                    onChange={(e) =>
-                      setFormData({ ...formData, password: e.target.value })
-                    }
-                  />
+              {!formData._id && (
+                <div className="col-md-12">
+                  <div>
+                    <label className="form-label">Password</label>
+                    <input
+                      type="text"
+                      className="form-control bw-form-control"
+                      value={formData.password}
+                      onChange={(e) =>
+                        setFormData({ ...formData, password: e.target.value })
+                      }
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </form>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="outline-primary" className="bw-btn">
+          <Button
+            variant="outline-primary"
+            className="bw-btn"
+            onClick={handleClearModel}
+          >
             Cancel
           </Button>
           <Button variant="primary" className="bw-btn" onClick={handleSubmit}>

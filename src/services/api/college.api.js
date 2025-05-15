@@ -1,62 +1,77 @@
 import { API_ENDPOINTS, ERROR } from "../../../utils/constants/api";
+import { fetchWithAuth } from "../../../utils/helpers/fetchWithAuth";
 
-export const userApi = {
-    addCollege: async (formData) => {
-        try {
-        //   const token = localStorage.getItem("token"); // optional, if auth needed
-    
-          const response = await fetch(API_ENDPOINTS.college.add, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(formData),
-          });
-    
-          if (!response.ok) {
-            throw new Error("Failed to add college");
-          }
-    
-          return await response.json();
-        } catch (error) {
-          throw error;
-        }
-      },
-      getCollegs : async()=>{
-        try {
-          const response = await fetch(API_ENDPOINTS.college.get, {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-            },
-          });
-    
-          if (!response.ok) {
-            throw new Error("Failed to fetch colleges");
-          }
-    
-          return await response.json();
-        } catch (error) {
-          throw error;
-        }
-      }  ,
-      deleteCollege: async (collegeId) => {
-        try {
-          const response = await fetch(`${API_ENDPOINTS.college.delete}/${collegeId}`, {
-            method: "DELETE",
-            headers: {
-              "Content-Type": "application/json",
-            },
-          });
+export const collegeApi = {
+  addCollege: async (formData) => {
+    try {
+      const response = await fetchWithAuth(API_ENDPOINTS.college.add, {
+        method: "POST",
+        body: JSON.stringify(formData),
+      });
 
-          if (!response.ok) {
-            throw new Error("Failed to delete college");
-          }
+      if (!response) return; 
 
-          return await response.json();
-        } catch (error) {
-          throw error;
-        }
-      }
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
 
+  getCollegs: async () => {
+    try {
+      const response = await fetchWithAuth(API_ENDPOINTS.college.get, {
+        method: "GET",
+      });
+
+      if (!response) return; 
+
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  deleteCollege: async (collegeId) => {
+    try {
+      const response = await fetchWithAuth(`${API_ENDPOINTS.college.delete}/${collegeId}`, {
+        method: "DELETE",
+      });
+
+      if (!response) return;
+
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  updateCollege: async (collegeId, formData) => {
+    try {
+      const response = await fetchWithAuth(`${API_ENDPOINTS.college.update}/${collegeId}`, {
+        method: "PUT",
+        body: JSON.stringify(formData),
+      });
+
+      if (!response) return; 
+
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  addAttendance: async (collegeId, isOn) => {
+    try {
+      const response = await fetchWithAuth(API_ENDPOINTS.college.attandance, {
+        method: "POST",
+        body: JSON.stringify({ collegeId, isOn }),
+      });
+
+      if (!response) return; 
+
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
 };

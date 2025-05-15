@@ -8,28 +8,88 @@ import AdminLayout from "./layouts/AdminLayout"
 import Attendance from "./views/Attendance"
 import Representatives from "./views/Representatives"
 import Courses from "./views/Courses"
+import Unauthorized from "./views/Unauthorized"
+import EmployeeAccess from "./views/employeeAccess"
 
-
+import ProtectedRoute from "./components/ProtectedRoute"
 function App() {
-
   return (
-    <>
-      <Routes>
-        <Route path="/" element={<AuthLayout />}>
-          <Route index element={<Login />} /> 
-        </Route>
-        <Route path="account" element={<AdminLayout />}>
+    <Routes>
+      <Route path="/" element={<AuthLayout />}>
+        <Route index element={<Login />} />
+      </Route>
+
+      <Route path="account" element={<AdminLayout />}>
         <Route index element={<Navigate to="dashboard" replace />} />
-          <Route path="dashboard" element={<Dashboard />} /> 
-          <Route path="colleges" element={<Colleges />} /> 
-          <Route path="courses" element={<Courses />} /> 
-          <Route path="students" element={<Students />} /> 
-          <Route path="attendance" element={<Attendance />} /> 
-          <Route path="representatives" element={<Representatives />} /> 
-        </Route>
-      </Routes>
-    </>
-  )
+
+        <Route
+          path="dashboard"
+          element={
+            <ProtectedRoute allowedRoles={["superadmin", "admin", "collegeadmin", "user","tech"]}>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="colleges"
+          element={
+            <ProtectedRoute allowedRoles={["superadmin", "admin", "collegeadmin"]}>
+              <Colleges />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="attendance"
+          element={
+            <ProtectedRoute allowedRoles={["superadmin"]}>
+              <Attendance />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="courses"
+          element={
+            <ProtectedRoute allowedRoles={["superadmin", "admin"]}>
+              <Courses />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="students"
+          element={
+            <ProtectedRoute allowedRoles={["superadmin", "admin", "collegeadmin"]}>
+              <Students />
+            </ProtectedRoute>
+          }
+        />
+        
+        <Route
+          path="Representatives"
+          element={
+            <ProtectedRoute allowedRoles={["superadmin", "admin",]}>
+              <Representatives />
+            </ProtectedRoute>
+          }
+        />
+       <Route
+          path="EmployeeAcess"
+          element={
+            <ProtectedRoute allowedRoles={["superadmin", "admin","tech"]}>
+             <EmployeeAccess></EmployeeAccess>
+            </ProtectedRoute>
+          }
+        />
+      </Route>
+      
+
+
+      <Route path="/unauthorized" element={<Unauthorized />} />
+    </Routes>
+  );
 }
 
-export default App
+export default App;
